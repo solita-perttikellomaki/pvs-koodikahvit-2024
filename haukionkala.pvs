@@ -1,0 +1,15 @@
+haukionkala : THEORY
+BEGIN
+  elain : TYPE+
+  hauki, valas : elain
+
+  on_kala(e : elain) : bool
+  elaa_vedessa(e : elain) : bool
+
+  kala_elaa_vedessa : bool = FORALL (e : elain): on_kala(e) => elaa_vedessa(e)
+
+  hauki_elaa_vedessa : THEOREM on_kala(hauki) AND kala_elaa_vedessa => elaa_vedessa(hauki)
+
+  valas_on_kala : THEOREM elaa_vedessa(valas) AND kala_elaa_vedessa => on_kala(valas)
+
+END haukionkala

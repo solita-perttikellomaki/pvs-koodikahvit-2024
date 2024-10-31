@@ -1,0 +1,92 @@
+rakenneid : THEORY
+BEGIN
+  rakenneid : TYPE+
+  unbound : rakenneid
+
+  bound(x : rakenneid) : bool = x /= unbound
+  unbound(x : rakenneid) : bool = x = unbound
+  
+END rakenneid
+
+
+
+trex  % [ parameters ]
+                : THEORY
+
+  BEGIN
+  IMPORTING rakenneid
+
+  organisaatioid : TYPE+
+
+  EKKANTAVUUDEN_RAKENNEID, RAKENNEID : rakenneid
+
+  RAKENNEID1 : VAR rakenneid
+
+  rooli : TYPE = {katselija, korotettu_tietoturvataso_tl_iii_kantavuustiedot,
+                  korotettu_tietoturvataso_tl_iii_omat_kantavuustiedot}
+
+  KAYTTAJAN_ROOLIT : setof[rooli]
+
+  RAKENTEEN_OMISTAJA : [rakenneid -> organisaatioid]
+
+  RAKENTEEN_KUNNOSSAPITAJA  : [rakenneid -> organisaatioid]
+
+  KAYTTAJAN_ORGANISAATIO : organisaatioid
+
+  TR_AND(x, y : bool) : bool = x AND y
+
+  TR_OR(x, y : bool) : bool = x OR y
+
+  ekkantavuuden_katselu_ehto : bool =
+    TR_AND(
+     member(katselija, KAYTTAJAN_ROOLIT),
+     TR_OR(
+      member(
+        korotettu_tietoturvataso_tl_iii_kantavuustiedot,
+        KAYTTAJAN_ROOLIT),
+      TR_AND(
+       member(
+        korotettu_tietoturvataso_tl_iii_omat_kantavuustiedot,
+        KAYTTAJAN_ROOLIT),
+       (exists RAKENNEID1:
+         member(RAKENNEID1, {r : rakenneid | r = RAKENNEID OR r = EKKANTAVUUDEN_RAKENNEID})
+         AND (bound(RAKENNEID1)
+             AND (unbound(RAKENNEID) OR unbound(EKKANTAVUUDEN_RAKENNEID) OR RAKENNEID = EKKANTAVUUDEN_RAKENNEID))
+        AND
+        TR_OR(
+         RAKENTEEN_OMISTAJA(RAKENNEID1) = KAYTTAJAN_ORGANISAATIO,
+         RAKENTEEN_KUNNOSSAPITAJA(RAKENNEID1) = KAYTTAJAN_ORGANISAATIO)))))
+
+  katselija_ei_nae_kantavuuksia : THEOREM
+    KAYTTAJAN_ROOLIT = {r : rooli | r = katselija}
+    AND bound(RAKENNEID)
+    => NOT ekkantavuuden_katselu_ehto
+
+  omilla_kantavuustiedoilla_ei_nae_vieraan_organisation_kantavuustietoja : THEOREM
+    KAYTTAJAN_ROOLIT = {r : rooli | r = katselija OR r = korotettu_tietoturvataso_tl_iii_omat_kantavuustiedot}
+    AND RAKENTEEN_OMISTAJA(RAKENNEID) /= KAYTTAJAN_ORGANISAATIO
+    AND RAKENTEEN_KUNNOSSAPITAJA(RAKENNEID) /= KAYTTAJAN_ORGANISAATIO
+    AND bound(RAKENNEID)
+    AND EKKANTAVUUDEN_RAKENNEID = RAKENNEID
+    => NOT ekkantavuuden_katselu_ehto
+
+  omistaja_nakee_oman_organisaation_kantavuustiedot : THEOREM
+    KAYTTAJAN_ROOLIT = {r : rooli | r = katselija OR r = korotettu_tietoturvataso_tl_iii_omat_kantavuustiedot}
+    AND RAKENTEEN_OMISTAJA(RAKENNEID) = KAYTTAJAN_ORGANISAATIO
+    AND RAKENTEEN_KUNNOSSAPITAJA(RAKENNEID) /= KAYTTAJAN_ORGANISAATIO
+    AND bound(RAKENNEID)
+    AND EKKANTAVUUDEN_RAKENNEID = RAKENNEID
+    => ekkantavuuden_katselu_ehto
+
+  huijaamalla_ekkantavuuden_rakenneid_ei_nae_oman_organisaation_kantavuustietoja : THEOREM
+    KAYTTAJAN_ROOLIT = {r : rooli | r = katselija OR r = korotettu_tietoturvataso_tl_iii_omat_kantavuustiedot}
+    AND RAKENTEEN_OMISTAJA(RAKENNEID) = KAYTTAJAN_ORGANISAATIO
+    AND RAKENTEEN_KUNNOSSAPITAJA(RAKENNEID) /= KAYTTAJAN_ORGANISAATIO
+    AND bound(RAKENNEID)
+    AND bound(EKKANTAVUUDEN_RAKENNEID)
+    AND EKKANTAVUUDEN_RAKENNEID /= RAKENNEID
+    => not ekkantavuuden_katselu_ehto
+
+  
+
+  END trex
